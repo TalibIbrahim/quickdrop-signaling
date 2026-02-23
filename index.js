@@ -41,7 +41,7 @@ io.on("connection", (socket) => {
       .filter((s) => s.id !== socket.id && s.userData)
       .map((s) => s.userData);
 
-    socket.emit("sync-ppers", existingPeers);
+    socket.emit("sync-peers", existingPeers);
   });
 
   // MOVED OUTSIDE: Listen for disconnects properly
