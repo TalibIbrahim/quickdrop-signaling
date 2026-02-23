@@ -18,8 +18,12 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
   // Extract the real IP (Render uses 'x-forwarded-for')
-  const clientIP =
-    socket.handshake.headers["x-forwarded-for"] || socket.conn.remoteAddress;
+  const rawIP =
+    socket.handshake.headers["x-forwarded-for"] ||
+    socket.conn.remoteAddress ||
+    " ";
+
+  const clientIP = rawIP.split(",")[0].trim();
 
   console.log(`[Socket] Connected: ${socket.id} | IP: ${clientIP}`);
 
@@ -27,9 +31,17 @@ io.on("connection", (socket) => {
   socket.join(clientIP);
 
   // When a user initializes the radar page, they announce themselves
-  socket.on("join-radar", (userData) => {
+  socket.on("join-radar", async (userData) => {
     socket.userData = userData;
     socket.to(clientIP).emit("peer-joined", userData);
+
+    // Fetch everyone currently in the room and send them to the new user
+    const sockets = await io.in(clientIP).fetchSockets();
+    const existingPeers = sockets
+      .filter((s) => s.id !== socket.id && s.userData)
+      .map((s) => s.userData);
+
+    socket.emit("sync-ppers", existingPeers);
   });
 
   // MOVED OUTSIDE: Listen for disconnects properly
