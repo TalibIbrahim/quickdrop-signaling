@@ -60,6 +60,11 @@ const peerServer = ExpressPeerServer(server, {
   path: "/myapp",
 });
 
+// Lightweight health check for the keep-alive pinger (registered before PeerJS so it isn't swallowed)
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 // Attach PeerJS to the Express app
 app.use("/", peerServer);
 
